@@ -4,12 +4,15 @@ namespace SilexArangoDb\Silex\Provider;
 
 use Silex\Application;
 use Silex\ServiceProviderInterface;
+use triagens\ArangoDb\AdminHandler;
 use triagens\ArangoDb\Collection;
 use triagens\ArangoDb\CollectionHandler;
 use triagens\ArangoDb\ConnectionOptions;
 use triagens\ArangoDb\Document;
 use triagens\ArangoDb\DocumentHandler;
+use triagens\ArangoDb\Edge;
 use triagens\ArangoDb\EdgeHandler;
+use triagens\ArangoDb\Graph;
 use triagens\ArangoDb\GraphHandler;
 use triagens\ArangoDb\Transaction;
 use triagens\ArangoDb\UpdatePolicy;
@@ -109,11 +112,6 @@ class ArangoDbServiceProvider implements ServiceProviderInterface
                 $configs = new \Pimple();
                 foreach ($app['arangodbs.options'] as $name => $options) {
                     $configs[$name] = new ConnectionOptions($options);
-
-                    /*if (isset($container['logger'])) {
-                        $logger = new Logger($container['logger']);
-                        $configs[$name]->setLoggerCallable(array($logger, 'logQuery'));
-                    }*/
                 }
 
                 return $configs;
@@ -128,24 +126,28 @@ class ArangoDbServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['arangodb.document_handler'] = $app->share(
-            function ($app) {
-                $db = $app['arangodb'];
+        $this->collectionManagement($app);
+        $this->documentManagement($app);
+        $this->edgeManagement($app);
+        $this->graphManagement($app);
+    }
 
-                return new DocumentHandler($db);
-            }
-        );
+    /**
+     * @inheritdoc
+     */
+    public function boot(Application $app)
+    {
+    }
 
-        $app['arangodbs.document_handler'] = $app->share(
-            function ($app) {
-                $app['arangodbs.options.initializer']();
-
-                $handlers = new \Pimple();
-                foreach ($app['arangodbs.options'] as $name => $options) {
-                    $handlers[$name] = new DocumentHandler($app['arangodbs'][$name]);
+    protected function collectionManagement(Application $app)
+    {
+        $app['arangodb.collection'] = $app->protect(
+            function (array $data = []) use ($app) {
+                if (!empty($data)) {
+                    return Collection::createFromArray($data);
                 }
 
-                return $handlers;
+                return new Collection();
             }
         );
 
@@ -169,44 +171,106 @@ class ArangoDbServiceProvider implements ServiceProviderInterface
                 return $handlers;
             }
         );
+    }
 
-        $app['arangodbs.transaction'] = $app->protect(
-            function ($database = null) use ($app) {
-                $app['arangodbs.options.initializer']();
-
-                if (is_null($database)) {
-                    $database = $app['arangodbs.default'];
-                }
-
-                return new Transaction($app['arangodbs'][$database]);
-            }
-        );
-
+    protected function documentManagement(Application $app)
+    {
         $app['arangodb.document'] = $app->protect(
-            function (array $data = array()) use ($app) {
+            function (array $data = []) use ($app) {
                 if (!empty($data)) {
                     return Document::createFromArray($data);
                 }
-
                 return new Document();
             }
         );
 
-        $app['arangodb.collection'] = $app->protect(
-            function (array $data = array()) use ($app) {
-                if (!empty($data)) {
-                    return Collection::createFromArray($data);
+        $app['arangodb.document_handler'] = $app->share(
+            function ($app) {
+                $db = $app['arangodb'];
+
+                return new DocumentHandler($db);
+            }
+        );
+
+        $app['arangodbs.document_handler'] = $app->share(
+            function ($app) {
+                $app['arangodbs.options.initializer']();
+
+                $handlers = new \Pimple();
+                foreach ($app['arangodbs.options'] as $name => $options) {
+                    $handlers[$name] = new DocumentHandler($app['arangodbs'][$name]);
                 }
 
-                return new Collection();
+                return $handlers;
             }
         );
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function boot(Application $app)
+    protected function edgeManagement(Application $app)
     {
+        $app['arangodb.edge'] = $app->protect(
+            function (array $data = []) use ($app) {
+                if (!empty($data)) {
+                    return Edge::createFromArray($data);
+                }
+
+                return new Edge();
+            }
+        );
+
+        $app['arangodb.edge_handler'] = $app->share(
+            function ($app) {
+                $db = $app['arangodb'];
+
+                return new EdgeHandler($db);
+            }
+        );
+
+        $app['arangodbs.edge_handler'] = $app->share(
+            function ($app) {
+                $app['arangodbs.options.initializer']();
+
+                $handlers = new \Pimple();
+                foreach ($app['arangodbs.options'] as $name => $options) {
+                    $handlers[$name] = new EdgeHandler($app['arangodbs'][$name]);
+                }
+
+                return $handlers;
+            }
+        );
+    }
+
+    protected function graphManagement(Application $app)
+    {
+        $app['arangodb.graph'] = $app->protect(
+            function (array $data = []) use ($app) {
+                if (!empty($data)) {
+                    return Graph::createFromArray($data);
+                }
+
+                return new Graph();
+            }
+        );
+
+        $app['arangodb.graph_handler'] = $app->share(
+            function ($app) {
+                $db = $app['arangodb'];
+
+                return new GraphHandler($db);
+            }
+        );
+
+        $app['arangodbs.graph_handler'] = $app->share(
+            function ($app) {
+                $app['arangodbs.options.initializer']();
+
+                $handlers = new \Pimple();
+                foreach ($app['arangodbs.options'] as $name => $options) {
+                    $handlers[$name] = new GraphHandler($app['arangodbs'][$name]);
+                }
+
+                return $handlers;
+            }
+        );
     }
 }
