@@ -1,5 +1,5 @@
 {
-    "name": "helderjs/ArangoDb",
+    "name": "helderjs/silex-Arangodb-service-provider",
     "description": "ArangoDB Silex Service Provider",
     "keywords": ["silex", "arango", "arangodb"],
     "homepage": "https://github.com/helderjs/ArangoDbSilexServiceProvider",
