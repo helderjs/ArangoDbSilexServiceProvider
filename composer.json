@@ -1,7 +1,7 @@
 {
     "name": "helderjs/silex-arangodb-service-provider",
     "description": "ArangoDB Silex Service Provider",
-    "keywords": ["silex", "arango", "arangodb"],
+    "keywords": ["PHP", "Silex", "ArangoDB", "Provider", "NoSQL", "database"],
     "homepage": "https://github.com/helderjs/ArangoDbSilexServiceProvider",
     "type": "library",
     "license": "MIT",
@@ -10,7 +10,8 @@
         {
             "name": "Helder Santana",
             "email": "contato@heldersantana.net",
-            "homepage": "http://heldersantana.net"
+            "homepage": "http://github.com/helderjs",
+            "role" : "Creator"
         }
     ],
     "require": {
@@ -25,5 +26,9 @@
             "SilexArangoDb": "src"
         }
     },
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "support" : {
+        "source" : "https://github.com/helderjs/ArangoDbSilexServiceProvider",
+        "issues" : "https://github.com/helderjs/ArangoDbSilexServiceProvider/issues"
+    }
 }
