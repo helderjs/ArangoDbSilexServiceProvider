@@ -46,7 +46,7 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         }
     }
 
-    public function testSingleConnection()
+    /*public function testSingleConnection()
     {
         $app = new Application();
         $app->register(
@@ -97,11 +97,8 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
 
         $response = $arangodb2->get('/_admin/statistics');
         $this->assertTrue($response->getHttpCode() == 200, 'Did not return http code 200');
-    }
+    }*/
 
-    /**
-     * @depends testSingleConnection
-     */
     public function testCollectionSingleDb()
     {
         $app = new Application();
@@ -130,9 +127,6 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(is_numeric($app['arangodb.collection_handler']->create($collection2)));
     }
 
-    /**
-     * @depends testMultipleConnections
-     */
     public function testCollectionMultiDb()
     {
         $app = new Application();
@@ -174,9 +168,6 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(is_numeric($app['arangodbs.collection_handler']['arangodb2']->create($collectiondb2_2)));
     }
 
-    /**
-     * @depends testCollectionSingleDb
-     */
     public function testCreateDocumentSingleDb()
     {
         $app = new Application();
@@ -209,9 +200,6 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(is_numeric($app['arangodb.document_handler']->save('collection_test', $document)));
     }
 
-    /**
-     * @depends testCollectionMultiDb
-     */
     public function testCreateDocumentMultiDb()
     {
         $app = new Application();
