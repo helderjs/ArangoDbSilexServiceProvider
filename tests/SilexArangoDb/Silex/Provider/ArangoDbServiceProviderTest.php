@@ -10,9 +10,20 @@ use triagens\ArangoDb\UpdatePolicy;
 
 class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
 {
-    protected $configsTest = array(
-        'arangodb1' => array(
-            ConnectionOptions::OPTION_ENDPOINT => 'tcp://127.0.0.1:8529',
+
+    /**
+     * DB access config
+     *
+     * @var array
+     */
+    protected $configsTest = array();
+
+    public function setUp()
+    {
+        parent::setUp();
+
+        $this->configsTest['arangodb1'] = array(
+            ConnectionOptions::OPTION_ENDPOINT => "tcp://" . $_ENV['WERCKER_ARANGODB_URL'],
             ConnectionOptions::OPTION_AUTH_TYPE => 'Basic',
             ConnectionOptions::OPTION_AUTH_USER => 'root',
             ConnectionOptions::OPTION_AUTH_PASSWD => '',
@@ -22,24 +33,20 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
             ConnectionOptions::OPTION_CREATE => true,
             ConnectionOptions::OPTION_UPDATE_POLICY => UpdatePolicy::LAST,
             ConnectionOptions::OPTION_DATABASE => "db_test1",
-        ),
-        'arangodb2' => array(
-            ConnectionOptions::OPTION_ENDPOINT => 'tcp://127.0.0.1:8529',
+        );
+
+        $this->configsTest['arangodb2'] = array(
+            ConnectionOptions::OPTION_ENDPOINT => "tcp://" . $_ENV['WERCKER_ARANGODB_URL'],
             ConnectionOptions::OPTION_AUTH_TYPE => 'Basic',
             ConnectionOptions::OPTION_AUTH_USER => 'admin',
             ConnectionOptions::OPTION_AUTH_PASSWD => '123456',
-            ConnectionOptions::OPTION_CONNECTION => 'Keep-Alive',
-            ConnectionOptions::OPTION_TIMEOUT => 5,
+            ConnectionOptions::OPTION_CONNECTION => 'Close',
+            ConnectionOptions::OPTION_TIMEOUT => 3,
             ConnectionOptions::OPTION_RECONNECT => true,
             ConnectionOptions::OPTION_CREATE => true,
             ConnectionOptions::OPTION_UPDATE_POLICY => UpdatePolicy::LAST,
             ConnectionOptions::OPTION_DATABASE => "db_test2",
-        ),
-    );
-
-    public function setUp()
-    {
-        parent::setUp();
+        );
 
         if (!class_exists('triagens\ArangoDb\Connection')) {
             $this->markTestSkipped('ArangoDB-PHP is not available');
