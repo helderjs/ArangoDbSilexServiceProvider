@@ -24,7 +24,7 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
     {
         parent::setUp();
 
-        $host = empty($_ENV['WERCKER_ARANGODB_URL']) ? "localhost:8529" : $_ENV['WERCKER_ARANGODB_URL'];
+        $host = empty($_ENV['WERCKER']) ? "localhost:8529" : $_ENV['WERCKER_ARANGODB_URL'];
         $this->configsTest['arangodb1'] = array(
             ConnectionOptions::OPTION_ENDPOINT => "tcp://" . $host,
             ConnectionOptions::OPTION_AUTH_TYPE => 'Basic',
