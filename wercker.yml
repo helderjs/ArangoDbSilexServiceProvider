@@ -4,9 +4,6 @@ services:
 build:
     steps:
         - script:
-            name: configuring database
-            code: arangosh --javascript.execute arangodb.js
-        - script:
             name: install dependencies
             code: composer install --no-interaction --prefer-source
         - script:
