@@ -16,4 +16,17 @@
 composer.phar
 vendor/
 
+### NetBeans template
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+nbactions.xml
+.nb-gradle/
 
+### Wercker template
+_builds/
+_cache/
+_projects/
+_steps/

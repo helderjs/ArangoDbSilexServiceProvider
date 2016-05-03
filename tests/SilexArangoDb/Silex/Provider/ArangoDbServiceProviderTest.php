@@ -27,9 +27,9 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
             $this->markTestSkipped('ArangoDB-PHP is not available');
         }
 
-        $host = empty($_ENV['WERCKER']) ? "localhost:8529" : $_ENV['DB_LINK_PORT_8529_TCP'];
+        $host = empty($_ENV['WERCKER']) ? "tcp://localhost:8529" : $_ENV['ARANGODB_PORT_8529_TCP'];
         $this->configsTest['arangodb1'] = [
-            ConnectionOptions::OPTION_ENDPOINT => "tcp://" . $host,
+            ConnectionOptions::OPTION_ENDPOINT => $host,
             ConnectionOptions::OPTION_AUTH_TYPE => 'Basic',
             ConnectionOptions::OPTION_AUTH_USER => 'root',
             ConnectionOptions::OPTION_AUTH_PASSWD => 'pass2arango',
@@ -42,7 +42,7 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         ];
 
         $this->configsTest['arangodb2'] = [
-            ConnectionOptions::OPTION_ENDPOINT => "tcp://" . $host,
+            ConnectionOptions::OPTION_ENDPOINT => $host,
             ConnectionOptions::OPTION_AUTH_TYPE => 'Basic',
             ConnectionOptions::OPTION_AUTH_USER => 'root',
             ConnectionOptions::OPTION_AUTH_PASSWD => '',

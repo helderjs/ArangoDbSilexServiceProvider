@@ -1,16 +1,19 @@
-box: wercker/php
+box: php:7.0.6-cli
 services:
-    - id: arangodb:2.8.7
-      env:
-        ARANGO_ROOT_PASSWORD: pass2arango
+  - id: arangodb:2.8.7
+    env:
+      ARANGO_ROOT_PASSWORD: pass2arango
 build:
-    steps:
-        - script:
-            name: install composer
-            code: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
-        - script:
-            name: install dependencies
-            code: composer install --no-interaction
-        - script:
-            name: PHPUnit integration tests
-            code: vendor/bin/phpunit --configuration phpunit.xml
+  steps:
+    - script:
+      name: env
+      code: env
+    - script:
+      name: install composer
+      code: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+    - script:
+      name: install dependencies
+      code: composer install --no-interaction
+    - script:
+      name: PHPUnit integration tests
+      code: $WERCKER_ROOT/vendor/phpunit/phpunit/phpunit --configuration phpunit.xml

@@ -12,7 +12,7 @@ $loader = require realpath(__DIR__ . '/../vendor/autoload.php');
 $prepareDatabase = function() {
     $connection = new Connection(
         [
-            ConnectionOptions::OPTION_ENDPOINT => empty($_ENV['WERCKER']) ? "tcp://localhost:8529" : $_ENV['DB_LINK_PORT_8529_TCP'],
+            ConnectionOptions::OPTION_ENDPOINT => empty($_ENV['WERCKER']) ? "tcp://localhost:8529" : $_ENV['ARANGODB_PORT_8529_TCP'],
             ConnectionOptions::OPTION_AUTH_TYPE => 'Basic',
             ConnectionOptions::OPTION_AUTH_USER => 'root',
             ConnectionOptions::OPTION_AUTH_PASSWD => 'pass2arango',
@@ -34,7 +34,7 @@ $prepareDatabase = function() {
     
     $connection2 = new Connection(
         [
-            ConnectionOptions::OPTION_ENDPOINT => empty($_ENV['WERCKER']) ? "tcp://localhost:8529" : $_ENV['DB_LINK_PORT_8529_TCP'],
+            ConnectionOptions::OPTION_ENDPOINT => empty($_ENV['WERCKER']) ? "tcp://localhost:8529" : $_ENV['ARANGODB_PORT_8529_TCP'],
             ConnectionOptions::OPTION_AUTH_TYPE => 'Basic',
             ConnectionOptions::OPTION_AUTH_USER => 'root',
             ConnectionOptions::OPTION_AUTH_PASSWD => '',
