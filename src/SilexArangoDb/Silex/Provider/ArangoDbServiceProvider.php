@@ -14,6 +14,7 @@ use triagens\ArangoDb\Edge;
 use triagens\ArangoDb\EdgeHandler;
 use triagens\ArangoDb\Graph;
 use triagens\ArangoDb\GraphHandler;
+use triagens\ArangoDb\Statement;
 use triagens\ArangoDb\Transaction;
 use triagens\ArangoDb\UpdatePolicy;
 use triagens\ArangoDb\Connection;
@@ -24,6 +25,8 @@ class ArangoDbServiceProvider implements ServiceProviderInterface
     public function register(Application $app)
     {
         $app['arangodb.default_options'] = array(
+            // database name
+            ConnectionOptions::OPTION_DATABASE => '_system',
             // server endpoint to connect to
             ConnectionOptions::OPTION_ENDPOINT => 'tcp://127.0.0.1:8529',
             // authorization type to use (currently supported: 'Basic')
@@ -130,6 +133,7 @@ class ArangoDbServiceProvider implements ServiceProviderInterface
         $this->documentManagement($app);
         $this->edgeManagement($app);
         $this->graphManagement($app);
+        $this->statementManagement($app);
     }
 
     /**
@@ -267,6 +271,32 @@ class ArangoDbServiceProvider implements ServiceProviderInterface
                 $handlers = new \Pimple();
                 foreach ($app['arangodbs.options'] as $name => $options) {
                     $handlers[$name] = new GraphHandler($app['arangodbs'][$name]);
+                }
+
+                return $handlers;
+            }
+        );
+    }
+
+    protected function statementManagement(Application $app)
+    {
+        $app['arangodb.statement'] = $app->protect(
+            function (array $query) use ($app) {
+                $db = $app['arangodb'];
+
+                $statement = new Statement($db, $query);
+
+                return $statement->execute();
+            }
+        );
+
+        $app['arangodbs.statement'] = $app->protect(
+            function (array $query) use ($app) {
+                $app['arangodbs.options.initializer']();
+
+                $handlers = new \Pimple();
+                foreach ($app['arangodbs.options'] as $name => $options) {
+                    $handlers[$name] = new Statement($app['arangodbs'][$name], $query);
                 }
 
                 return $handlers;

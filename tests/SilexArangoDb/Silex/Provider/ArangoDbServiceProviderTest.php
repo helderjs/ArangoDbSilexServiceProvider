@@ -5,55 +5,54 @@ namespace SilexArangoDb\Tests\Silex\Provider;
 use Silex\Application;
 use SilexArangoDb\Silex\Provider\ArangoDbServiceProvider;
 use triagens\ArangoDb\Collection;
+use triagens\ArangoDb\Connection;
 use triagens\ArangoDb\ConnectionOptions;
 use triagens\ArangoDb\UpdatePolicy;
-use triagens\ArangoDb\User;
 use triagens\ArangoDb\UserHandler;
 
 class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
 {
-
     /**
      * DB access config
      *
      * @var array
      */
-    protected $configsTest = array();
+    protected $configsTest = [];
 
     public function setUp()
     {
         parent::setUp();
 
-        $host = empty($_ENV['WERCKER']) ? "localhost:8529" : $_ENV['WERCKER_ARANGODB_URL'];
-        $this->configsTest['arangodb1'] = array(
+        if (!class_exists('triagens\ArangoDb\Connection')) {
+            $this->markTestSkipped('ArangoDB-PHP is not available');
+        }
+
+        $host = empty($_ENV['WERCKER']) ? "localhost:8529" : $_ENV['DB_LINK_PORT_8529_TCP'];
+        $this->configsTest['arangodb1'] = [
             ConnectionOptions::OPTION_ENDPOINT => "tcp://" . $host,
             ConnectionOptions::OPTION_AUTH_TYPE => 'Basic',
             ConnectionOptions::OPTION_AUTH_USER => 'root',
-            ConnectionOptions::OPTION_AUTH_PASSWD => '',
+            ConnectionOptions::OPTION_AUTH_PASSWD => 'pass2arango',
             ConnectionOptions::OPTION_CONNECTION => 'Close',
             ConnectionOptions::OPTION_TIMEOUT => 3,
             ConnectionOptions::OPTION_RECONNECT => true,
             ConnectionOptions::OPTION_CREATE => true,
             ConnectionOptions::OPTION_UPDATE_POLICY => UpdatePolicy::LAST,
-            //ConnectionOptions::OPTION_DATABASE => "db_test1",
-        );
+            ConnectionOptions::OPTION_DATABASE => "db_test1",
+        ];
 
-        $this->configsTest['arangodb2'] = array(
+        $this->configsTest['arangodb2'] = [
             ConnectionOptions::OPTION_ENDPOINT => "tcp://" . $host,
             ConnectionOptions::OPTION_AUTH_TYPE => 'Basic',
-            ConnectionOptions::OPTION_AUTH_USER => 'admin',
-            ConnectionOptions::OPTION_AUTH_PASSWD => '123456',
+            ConnectionOptions::OPTION_AUTH_USER => 'root',
+            ConnectionOptions::OPTION_AUTH_PASSWD => '',
             ConnectionOptions::OPTION_CONNECTION => 'Keep-Alive',
             ConnectionOptions::OPTION_TIMEOUT => 5,
             ConnectionOptions::OPTION_RECONNECT => true,
             ConnectionOptions::OPTION_CREATE => true,
             ConnectionOptions::OPTION_UPDATE_POLICY => UpdatePolicy::LAST,
-            //ConnectionOptions::OPTION_DATABASE => "db_test2",
-        );
-
-        if (!class_exists('triagens\ArangoDb\Connection')) {
-            $this->markTestSkipped('ArangoDB-PHP is not available');
-        }
+            ConnectionOptions::OPTION_DATABASE => "db_test2",
+        ];
     }
 
     public function testSingleConnection()
@@ -69,7 +68,10 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $arangodb = $app['arangodb'];
 
         $this->assertInstanceOf('triagens\ArangoDb\Connection', $arangodb);
-        $this->assertEquals('_system', $arangodb->getOption(ConnectionOptions::OPTION_DATABASE));
+        $this->assertEquals(
+            $this->configsTest['arangodb1'][ConnectionOptions::OPTION_DATABASE],
+            $arangodb->getOption(ConnectionOptions::OPTION_DATABASE)
+        );
         $this->assertSame($app['arangodbs']['default'], $arangodb);
 
         $response = $arangodb->get('/_admin/statistics');
@@ -86,25 +88,21 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
             )
         );
 
-        $arangodb = $app['arangodb'];
-
+        $arangodb = $app['arangodbs']['arangodb1'];
         $this->assertInstanceOf('triagens\ArangoDb\Connection', $arangodb);
-        $this->assertEquals('_system', $arangodb->getOption(ConnectionOptions::OPTION_DATABASE));
+        $this->assertEquals('db_test1', $arangodb->getOption(ConnectionOptions::OPTION_DATABASE));
         $this->assertEquals('root', $arangodb->getOption(ConnectionOptions::OPTION_AUTH_USER));
         $this->assertEquals('3', $arangodb->getOption(ConnectionOptions::OPTION_TIMEOUT));
         $this->assertEquals('Close', $arangodb->getOption(ConnectionOptions::OPTION_CONNECTION));
         $this->assertSame($app['arangodbs'][$app['arangodbs.default']], $arangodb);
-        $handler = new UserHandler($arangodb);
-        $this->assertTrue($handler->removeUser('admin'));
-        $this->assertTrue($handler->addUser('admin', '123456', true));
 
         $response = $arangodb->get('/_admin/statistics');
         $this->assertTrue($response->getHttpCode() == 200, 'Did not return http code 200');
 
         $arangodb2 = $app['arangodbs']['arangodb2'];
         $this->assertInstanceOf('triagens\ArangoDb\Connection', $arangodb2);
-        $this->assertEquals('_system', $arangodb2->getOption(ConnectionOptions::OPTION_DATABASE));
-        $this->assertEquals('admin', $arangodb2->getOption(ConnectionOptions::OPTION_AUTH_USER));
+        $this->assertEquals('db_test2', $arangodb2->getOption(ConnectionOptions::OPTION_DATABASE));
+        $this->assertEquals('root', $arangodb2->getOption(ConnectionOptions::OPTION_AUTH_USER));
         $this->assertEquals('5', $arangodb2->getOption(ConnectionOptions::OPTION_TIMEOUT));
         $this->assertEquals('Keep-Alive', $arangodb2->getOption(ConnectionOptions::OPTION_CONNECTION));
 
@@ -120,9 +118,9 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $app = new Application();
         $app->register(
             new ArangoDbServiceProvider(),
-            array(
+            [
                 'arangodb.options' => $this->configsTest['arangodb2'],
-            )
+            ]
         );
 
         try {
@@ -151,9 +149,9 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $app = new Application();
         $app->register(
             new ArangoDbServiceProvider(),
-            array(
+            [
                 'arangodbs.options' => $this->configsTest,
-            )
+            ]
         );
 
         try {
@@ -171,7 +169,7 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('triagens\ArangoDb\Collection', $collectiondb1_1);
         $this->assertTrue(is_numeric($app['arangodbs.collection_handler']['arangodb1']->create($collectiondb1_1)));
 
-        $collectiondb1_2 = $app['arangodb.collection'](array('name' => 'collection_test2', 'type' => Collection::TYPE_EDGE));
+        $collectiondb1_2 = $app['arangodb.collection'](['name' => 'collection_test2', 'type' => Collection::TYPE_EDGE]);
         $this->assertInstanceOf('triagens\ArangoDb\Collection', $collectiondb1_2);
         $this->assertTrue(is_numeric($app['arangodbs.collection_handler']['arangodb1']->create($collectiondb1_2)));
 
@@ -181,7 +179,7 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('triagens\ArangoDb\Collection', $collectiondb2_1);
         $this->assertTrue(is_numeric($app['arangodbs.collection_handler']['arangodb2']->create($collectiondb2_1)));
 
-        $collectiondb2_2 = $app['arangodb.collection'](array('name' => 'collection_test4', 'type' => Collection::TYPE_EDGE));
+        $collectiondb2_2 = $app['arangodb.collection'](['name' => 'collection_test4', 'type' => Collection::TYPE_EDGE]);
         $this->assertInstanceOf('triagens\ArangoDb\Collection', $collectiondb2_2);
         $this->assertTrue(is_numeric($app['arangodbs.collection_handler']['arangodb2']->create($collectiondb2_2)));
     }
@@ -194,9 +192,9 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $app = new Application();
         $app->register(
             new ArangoDbServiceProvider(),
-            array(
+            [
                 'arangodb.options' => $this->configsTest['arangodb2'],
-            )
+            ]
         );
 
         try {
@@ -216,7 +214,7 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('triagens\ArangoDb\Document', $document);
         $this->assertTrue(is_numeric($app['arangodb.document_handler']->save('collection_test1', $document)));
 
-        $document = $app['arangodb.document'](array('name' => 'Helder Santana', 'email' => 'contato@heldersantana.net'));
+        $document = $app['arangodb.document'](['name' => 'Helder Santana', 'email' => 'contato@heldersantana.net']);
         $this->assertInstanceOf('triagens\ArangoDb\Document', $document);
         $this->assertTrue(is_numeric($app['arangodb.document_handler']->save('collection_test1', $document)));
     }
@@ -229,9 +227,9 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $app = new Application();
         $app->register(
             new ArangoDbServiceProvider(),
-            array(
+            [
                 'arangodbs.options' => $this->configsTest,
-            )
+            ]
         );
 
         try {
@@ -250,11 +248,15 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $document->set('name', 'Helder Santana');
         $document->set('email', 'contato@heldersantana.net');
         $this->assertInstanceOf('triagens\ArangoDb\Document', $document);
-        $this->assertTrue(is_numeric($app['arangodbs.document_handler']['arangodb1']->save('collection_test1', $document)));
+        $this->assertTrue(
+            is_numeric($app['arangodbs.document_handler']['arangodb1']->save('collection_test1', $document))
+        );
 
-        $document = $app['arangodb.document'](array('name' => 'Helder Santana', 'email' => 'contato@heldersantana.net'));
+        $document = $app['arangodb.document'](['name' => 'Helder Santana', 'email' => 'contato@heldersantana.net']);
         $this->assertInstanceOf('triagens\ArangoDb\Document', $document);
-        $this->assertTrue(is_numeric($app['arangodbs.document_handler']['arangodb1']->save('collection_test1', $document)));
+        $this->assertTrue(
+            is_numeric($app['arangodbs.document_handler']['arangodb1']->save('collection_test1', $document))
+        );
 
         $collection = $app['arangodb.collection']();
         $collection->setName('collection_test2');
@@ -265,10 +267,14 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $document->set('name', 'Helder Santana');
         $document->set('email', 'contato@heldersantana.net');
         $this->assertInstanceOf('triagens\ArangoDb\Document', $document);
-        $this->assertTrue(is_numeric($app['arangodbs.document_handler']['arangodb2']->save('collection_test2', $document)));
+        $this->assertTrue(
+            is_numeric($app['arangodbs.document_handler']['arangodb2']->save('collection_test2', $document))
+        );
 
-        $document = $app['arangodb.document'](array('name' => 'Helder Santana', 'email' => 'contato@heldersantana.net'));
+        $document = $app['arangodb.document'](['name' => 'Helder Santana', 'email' => 'contato@heldersantana.net']);
         $this->assertInstanceOf('triagens\ArangoDb\Document', $document);
-        $this->assertTrue(is_numeric($app['arangodbs.document_handler']['arangodb2']->save('collection_test2', $document)));
+        $this->assertTrue(
+            is_numeric($app['arangodbs.document_handler']['arangodb2']->save('collection_test2', $document))
+        );
     }
 }

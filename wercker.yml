@@ -1,6 +1,7 @@
 box: wercker/php
 services:
-    - helderjs/arangodb
+    - id: arangodb:2.8.7
+      env: ARANGO_ROOT_PASSWORD=pass2arango
 build:
     steps:
         - script:
