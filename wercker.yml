@@ -6,9 +6,6 @@ services:
 build:
   steps:
     - script:
-      name: env
-      code: env
-    - script:
       name: install composer
       code: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
     - script:
