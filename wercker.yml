@@ -1,7 +1,8 @@
 box: wercker/php
 services:
     - id: arangodb:2.8.7
-      env: ARANGO_ROOT_PASSWORD=pass2arango
+      env:
+        ARANGO_ROOT_PASSWORD: pass2arango
 build:
     steps:
         - script:
