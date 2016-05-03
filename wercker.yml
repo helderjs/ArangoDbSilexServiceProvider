@@ -5,8 +5,11 @@ services:
 build:
     steps:
         - script:
-            name: install dependencies
-            code: composer install --no-interaction --prefer-source
+            name: install composer
+            code: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
         - script:
-            name: run unit tests
-            code: phpunit
+            name: install dependencies
+            code: composer install --no-interaction
+        - script:
+            name: PHPUnit integration tests
+            code: vendor/bin/phpunit --configuration phpunit.xml
