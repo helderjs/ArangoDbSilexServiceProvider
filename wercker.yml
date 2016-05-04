@@ -5,6 +5,8 @@ services:
         ARANGO_ROOT_PASSWORD: pass2arango
 build:
     steps:
+        - install-packages:
+            packages: git
         - script:
             name: install composer
             code: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
