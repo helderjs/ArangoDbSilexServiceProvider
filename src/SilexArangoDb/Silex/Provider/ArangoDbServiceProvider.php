@@ -3,7 +3,6 @@
 namespace SilexArangoDb\Silex\Provider;
 
 use Silex\Application;
-use Silex\ServiceProviderInterface;
 use triagens\ArangoDb\AdminHandler;
 use triagens\ArangoDb\Collection;
 use triagens\ArangoDb\CollectionHandler;
@@ -19,10 +18,16 @@ use triagens\ArangoDb\Transaction;
 use triagens\ArangoDb\UpdatePolicy;
 use triagens\ArangoDb\Connection;
 use triagens\ArangoDb\UserHandler;
+use Pimple\Container;
+use Pimple\ServiceProviderInterface;
 
 class ArangoDbServiceProvider implements ServiceProviderInterface
 {
-    public function register(Application $app)
+    public function boot(Application $app)
+    {
+        // TODO: Implement register() method.
+    }
+    public function register(Container $app)
     {
         $app['arangodb.default_options'] = array(
             // database name
@@ -76,71 +81,56 @@ class ArangoDbServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['arangodbs'] = $app->share(
-            function ($app) {
-                $app['arangodbs.options.initializer']();
+        $app['arangodbs'] = function ($app) {
+            $app['arangodbs.options.initializer']();
 
-                $dbs = new \Pimple();
-                foreach (array_keys($app['arangodbs.options']) as $name) {
-                    if ($app['arangodbs.default'] === $name) {
-                        // we use shortcuts here in case the default has been overridden
-                        $config = $app['arangodb.config'];
-                    } else {
-                        $config = $app['arangodbs.config'][$name];
+            $dbs = new Container();
+            foreach (array_keys($app['arangodbs.options']) as $name) {
+                if ($app['arangodbs.default'] === $name) {
+                    // we use shortcuts here in case the default has been overridden
+                    $config = $app['arangodb.config'];
+                } else {
+                    $config = $app['arangodbs.config'][$name];
+                }
+
+                $dbs[$name] =
+                    function () use ($config) {
+                        return new Connection($config->getAll());
                     }
-
-                    $dbs[$name] = $dbs->share(
-                        function () use ($config) {
-                            return new Connection($config->getAll());
-                        }
-                    );
-                }
-
-                return $dbs;
+                ;
             }
-        );
 
-        $app['arangodb'] = $app->share(
-            function ($app) {
-                $dbs = $app['arangodbs'];
+            return $dbs;
+        };
 
-                return $dbs[$app['arangodbs.default']];
+        $app['arangodb'] = function ($app) {
+            $dbs = $app['arangodbs'];
+
+            return $dbs[$app['arangodbs.default']];
+        };
+
+        $app['arangodbs.config'] = function ($app) {
+            $app['arangodbs.options.initializer']();
+
+            $configs = new Container();
+            foreach ($app['arangodbs.options'] as $name => $options) {
+                $configs[$name] = new ConnectionOptions($options);
             }
-        );
 
-        $app['arangodbs.config'] = $app->share(
-            function ($app) {
-                $app['arangodbs.options.initializer']();
+            return $configs;
+        };
 
-                $configs = new \Pimple();
-                foreach ($app['arangodbs.options'] as $name => $options) {
-                    $configs[$name] = new ConnectionOptions($options);
-                }
+        $app['arangodb.config'] = function ($app) {
+            $dbs = $app['arangodbs.config'];
 
-                return $configs;
-            }
-        );
-
-        $app['arangodb.config'] = $app->share(
-            function ($app) {
-                $dbs = $app['arangodbs.config'];
-
-                return $dbs[$app['arangodbs.default']];
-            }
-        );
+            return $dbs[$app['arangodbs.default']];
+        };
 
         $this->collectionManagement($app);
         $this->documentManagement($app);
         $this->edgeManagement($app);
         $this->graphManagement($app);
         $this->statementManagement($app);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function boot(Application $app)
-    {
     }
 
     protected function collectionManagement(Application $app)
@@ -155,26 +145,22 @@ class ArangoDbServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['arangodb.collection_handler'] = $app->share(
-            function ($app) {
-                $db = $app['arangodb'];
+        $app['arangodb.collection_handler'] = function ($app) {
+            $db = $app['arangodb'];
 
-                return new CollectionHandler($db);
+            return new CollectionHandler($db);
+        };
+
+        $app['arangodbs.collection_handler'] = function ($app) {
+            $app['arangodbs.options.initializer']();
+
+            $handlers = new Container();
+            foreach ($app['arangodbs.options'] as $name => $options) {
+                $handlers[$name] = new CollectionHandler($app['arangodbs'][$name]);
             }
-        );
 
-        $app['arangodbs.collection_handler'] = $app->share(
-            function ($app) {
-                $app['arangodbs.options.initializer']();
-
-                $handlers = new \Pimple();
-                foreach ($app['arangodbs.options'] as $name => $options) {
-                    $handlers[$name] = new CollectionHandler($app['arangodbs'][$name]);
-                }
-
-                return $handlers;
-            }
-        );
+            return $handlers;
+        };
     }
 
     protected function documentManagement(Application $app)
@@ -188,26 +174,22 @@ class ArangoDbServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['arangodb.document_handler'] = $app->share(
-            function ($app) {
-                $db = $app['arangodb'];
+        $app['arangodb.document_handler'] = function ($app) {
+            $db = $app['arangodb'];
 
-                return new DocumentHandler($db);
+            return new DocumentHandler($db);
+        };
+
+        $app['arangodbs.document_handler'] = function ($app) {
+            $app['arangodbs.options.initializer']();
+
+            $handlers = new Container();
+            foreach ($app['arangodbs.options'] as $name => $options) {
+                $handlers[$name] = new DocumentHandler($app['arangodbs'][$name]);
             }
-        );
 
-        $app['arangodbs.document_handler'] = $app->share(
-            function ($app) {
-                $app['arangodbs.options.initializer']();
-
-                $handlers = new \Pimple();
-                foreach ($app['arangodbs.options'] as $name => $options) {
-                    $handlers[$name] = new DocumentHandler($app['arangodbs'][$name]);
-                }
-
-                return $handlers;
-            }
-        );
+            return $handlers;
+        };
     }
 
     protected function edgeManagement(Application $app)
@@ -222,26 +204,22 @@ class ArangoDbServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['arangodb.edge_handler'] = $app->share(
-            function ($app) {
-                $db = $app['arangodb'];
+        $app['arangodb.edge_handler'] = function ($app) {
+            $db = $app['arangodb'];
 
-                return new EdgeHandler($db);
+            return new EdgeHandler($db);
+        };
+
+        $app['arangodbs.edge_handler'] = function ($app) {
+            $app['arangodbs.options.initializer']();
+
+            $handlers = new Container();
+            foreach ($app['arangodbs.options'] as $name => $options) {
+                $handlers[$name] = new EdgeHandler($app['arangodbs'][$name]);
             }
-        );
 
-        $app['arangodbs.edge_handler'] = $app->share(
-            function ($app) {
-                $app['arangodbs.options.initializer']();
-
-                $handlers = new \Pimple();
-                foreach ($app['arangodbs.options'] as $name => $options) {
-                    $handlers[$name] = new EdgeHandler($app['arangodbs'][$name]);
-                }
-
-                return $handlers;
-            }
-        );
+            return $handlers;
+        };
     }
 
     protected function graphManagement(Application $app)
@@ -256,26 +234,22 @@ class ArangoDbServiceProvider implements ServiceProviderInterface
             }
         );
 
-        $app['arangodb.graph_handler'] = $app->share(
-            function ($app) {
-                $db = $app['arangodb'];
+        $app['arangodb.graph_handler'] =function ($app) {
+            $db = $app['arangodb'];
 
-                return new GraphHandler($db);
+            return new GraphHandler($db);
+        };
+
+        $app['arangodbs.graph_handler'] = function ($app) {
+            $app['arangodbs.options.initializer']();
+
+            $handlers = new Container();
+            foreach ($app['arangodbs.options'] as $name => $options) {
+                $handlers[$name] = new GraphHandler($app['arangodbs'][$name]);
             }
-        );
 
-        $app['arangodbs.graph_handler'] = $app->share(
-            function ($app) {
-                $app['arangodbs.options.initializer']();
-
-                $handlers = new \Pimple();
-                foreach ($app['arangodbs.options'] as $name => $options) {
-                    $handlers[$name] = new GraphHandler($app['arangodbs'][$name]);
-                }
-
-                return $handlers;
-            }
-        );
+            return $handlers;
+        };
     }
 
     protected function statementManagement(Application $app)
@@ -294,7 +268,7 @@ class ArangoDbServiceProvider implements ServiceProviderInterface
             function (array $query) use ($app) {
                 $app['arangodbs.options.initializer']();
 
-                $handlers = new \Pimple();
+                $handlers = new Container();
                 foreach ($app['arangodbs.options'] as $name => $options) {
                     $handlers[$name] = new Statement($app['arangodbs'][$name], $query);
                 }
