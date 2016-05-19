@@ -26,7 +26,7 @@
         "triagens/arangodb": "~2.8.1"
     },
     "require-dev": {
-        "silex/silex": "~1.3.5",
+        "silex/silex": "~2.0@dev",
         "phpunit/phpunit": "5.3.*"
     },
     "autoload": {
