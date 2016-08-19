@@ -7,6 +7,7 @@ use SilexArangoDb\Silex\Provider\ArangoDbServiceProvider;
 use triagens\ArangoDb\Collection;
 use triagens\ArangoDb\Connection;
 use triagens\ArangoDb\ConnectionOptions;
+use triagens\ArangoDb\Document;
 use triagens\ArangoDb\UpdatePolicy;
 use triagens\ArangoDb\UserHandler;
 
@@ -45,7 +46,7 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
             ConnectionOptions::OPTION_ENDPOINT => $host,
             ConnectionOptions::OPTION_AUTH_TYPE => 'Basic',
             ConnectionOptions::OPTION_AUTH_USER => 'root',
-            ConnectionOptions::OPTION_AUTH_PASSWD => '',
+            ConnectionOptions::OPTION_AUTH_PASSWD => 'pass2arango',
             ConnectionOptions::OPTION_CONNECTION => 'Keep-Alive',
             ConnectionOptions::OPTION_TIMEOUT => 5,
             ConnectionOptions::OPTION_RECONNECT => true,
@@ -67,7 +68,7 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
 
         $arangodb = $app['arangodb'];
 
-        $this->assertInstanceOf('triagens\ArangoDb\Connection', $arangodb);
+        $this->assertInstanceOf(Connection::class, $arangodb);
         $this->assertEquals(
             $this->configsTest['arangodb1'][ConnectionOptions::OPTION_DATABASE],
             $arangodb->getOption(ConnectionOptions::OPTION_DATABASE)
@@ -89,7 +90,7 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         );
 
         $arangodb = $app['arangodbs']['arangodb1'];
-        $this->assertInstanceOf('triagens\ArangoDb\Connection', $arangodb);
+        $this->assertInstanceOf(Connection::class, $arangodb);
         $this->assertEquals('db_test1', $arangodb->getOption(ConnectionOptions::OPTION_DATABASE));
         $this->assertEquals('root', $arangodb->getOption(ConnectionOptions::OPTION_AUTH_USER));
         $this->assertEquals('3', $arangodb->getOption(ConnectionOptions::OPTION_TIMEOUT));
@@ -100,7 +101,7 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($response->getHttpCode() == 200, 'Did not return http code 200');
 
         $arangodb2 = $app['arangodbs']['arangodb2'];
-        $this->assertInstanceOf('triagens\ArangoDb\Connection', $arangodb2);
+        $this->assertInstanceOf(Connection::class, $arangodb2);
         $this->assertEquals('db_test2', $arangodb2->getOption(ConnectionOptions::OPTION_DATABASE));
         $this->assertEquals('root', $arangodb2->getOption(ConnectionOptions::OPTION_AUTH_USER));
         $this->assertEquals('5', $arangodb2->getOption(ConnectionOptions::OPTION_TIMEOUT));
@@ -133,11 +134,11 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $collection = $app['arangodb.collection']();
         $collection->setName('collection_test1');
         $collection->setType(Collection::TYPE_DOCUMENT);
-        $this->assertInstanceOf('triagens\ArangoDb\Collection', $collection);
+        $this->assertInstanceOf(Collection::class, $collection);
         $this->assertTrue(is_numeric($app['arangodb.collection_handler']->create($collection)));
 
         $collection2 = $app['arangodb.collection'](array('name' => 'collection_test2', 'type' => Collection::TYPE_EDGE));
-        $this->assertInstanceOf('triagens\ArangoDb\Collection', $collection2);
+        $this->assertInstanceOf(Collection::class, $collection2);
         $this->assertTrue(is_numeric($app['arangodb.collection_handler']->create($collection2)));
     }
 
@@ -166,21 +167,21 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $collectiondb1_1 = $app['arangodb.collection']();
         $collectiondb1_1->setName('collection_test1');
         $collectiondb1_1->setType(Collection::TYPE_DOCUMENT);
-        $this->assertInstanceOf('triagens\ArangoDb\Collection', $collectiondb1_1);
+        $this->assertInstanceOf(Collection::class, $collectiondb1_1);
         $this->assertTrue(is_numeric($app['arangodbs.collection_handler']['arangodb1']->create($collectiondb1_1)));
 
         $collectiondb1_2 = $app['arangodb.collection'](['name' => 'collection_test2', 'type' => Collection::TYPE_EDGE]);
-        $this->assertInstanceOf('triagens\ArangoDb\Collection', $collectiondb1_2);
+        $this->assertInstanceOf(Collection::class, $collectiondb1_2);
         $this->assertTrue(is_numeric($app['arangodbs.collection_handler']['arangodb1']->create($collectiondb1_2)));
 
         $collectiondb2_1 = $app['arangodb.collection']();
         $collectiondb2_1->setName('collection_test3');
         $collectiondb2_1->setType(Collection::TYPE_DOCUMENT);
-        $this->assertInstanceOf('triagens\ArangoDb\Collection', $collectiondb2_1);
+        $this->assertInstanceOf(Collection::class, $collectiondb2_1);
         $this->assertTrue(is_numeric($app['arangodbs.collection_handler']['arangodb2']->create($collectiondb2_1)));
 
         $collectiondb2_2 = $app['arangodb.collection'](['name' => 'collection_test4', 'type' => Collection::TYPE_EDGE]);
-        $this->assertInstanceOf('triagens\ArangoDb\Collection', $collectiondb2_2);
+        $this->assertInstanceOf(Collection::class, $collectiondb2_2);
         $this->assertTrue(is_numeric($app['arangodbs.collection_handler']['arangodb2']->create($collectiondb2_2)));
     }
 
@@ -211,11 +212,11 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $document = $app['arangodb.document']();
         $document->set('name', 'Helder Santana');
         $document->set('email', 'contato@heldersantana.net');
-        $this->assertInstanceOf('triagens\ArangoDb\Document', $document);
+        $this->assertInstanceOf(Document::class, $document);
         $this->assertTrue(is_numeric($app['arangodb.document_handler']->save('collection_test1', $document)));
 
         $document = $app['arangodb.document'](['name' => 'Helder Santana', 'email' => 'contato@heldersantana.net']);
-        $this->assertInstanceOf('triagens\ArangoDb\Document', $document);
+        $this->assertInstanceOf(Document::class, $document);
         $this->assertTrue(is_numeric($app['arangodb.document_handler']->save('collection_test1', $document)));
     }
 
@@ -247,13 +248,13 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $document = $app['arangodb.document']();
         $document->set('name', 'Helder Santana');
         $document->set('email', 'contato@heldersantana.net');
-        $this->assertInstanceOf('triagens\ArangoDb\Document', $document);
+        $this->assertInstanceOf(Document::class, $document);
         $this->assertTrue(
             is_numeric($app['arangodbs.document_handler']['arangodb1']->save('collection_test1', $document))
         );
 
         $document = $app['arangodb.document'](['name' => 'Helder Santana', 'email' => 'contato@heldersantana.net']);
-        $this->assertInstanceOf('triagens\ArangoDb\Document', $document);
+        $this->assertInstanceOf(Document::class, $document);
         $this->assertTrue(
             is_numeric($app['arangodbs.document_handler']['arangodb1']->save('collection_test1', $document))
         );
@@ -266,13 +267,13 @@ class ArangoDbServiceProviderTest extends \PHPUnit_Framework_TestCase
         $document = $app['arangodb.document']();
         $document->set('name', 'Helder Santana');
         $document->set('email', 'contato@heldersantana.net');
-        $this->assertInstanceOf('triagens\ArangoDb\Document', $document);
+        $this->assertInstanceOf(Document::class, $document);
         $this->assertTrue(
             is_numeric($app['arangodbs.document_handler']['arangodb2']->save('collection_test2', $document))
         );
 
         $document = $app['arangodb.document'](['name' => 'Helder Santana', 'email' => 'contato@heldersantana.net']);
-        $this->assertInstanceOf('triagens\ArangoDb\Document', $document);
+        $this->assertInstanceOf(Document::class, $document);
         $this->assertTrue(
             is_numeric($app['arangodbs.document_handler']['arangodb2']->save('collection_test2', $document))
         );
