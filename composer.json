@@ -23,7 +23,7 @@
     ],
     "require": {
         "php": ">=5.6",
-        "triagens/arangodb": "3.0.*"
+        "triagens/arangodb": "3.1.*"
     },
     "require-dev": {
         "silex/silex": "1.3.*",

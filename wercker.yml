@@ -1,6 +1,6 @@
-box: php:7.0.9-cli
+box: php:7.0.13-cli
 services:
-    - id: arangodb:3.0.4
+    - id: arangodb:3.1.0
       env:
         ARANGO_ROOT_PASSWORD: pass2arango
 build:

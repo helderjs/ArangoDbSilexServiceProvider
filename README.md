@@ -22,5 +22,5 @@ Requirements
 ------------
 
 * PHP 5.6+
-* ArangoDB-PHP (Tested with 3.0)
+* ArangoDB-PHP (Tested with 3.1)
 * Silex 1.3
